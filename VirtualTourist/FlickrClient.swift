@@ -132,35 +132,29 @@ class FlickrClient: NSObject {
                         return
                     }
                     
-                    self.getDataFromUrl(urlString) { (imageData, error) in
-                        guard let imageData = imageData else {
-                            displayError("Cannot find image data")
-                            return
-                        }
-                        guard let title = photo[FlickrResponseKeys.Title] else {
-                            displayError("Cannot find key '\(FlickrResponseKeys.Title)' in \(photosArray)")
-                            return
-                        }
-                        performUIUpdatesOnMain {
-                            let docDir = try! FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
-                            let imageURL = docDir.appendingPathComponent(title as! String)
-                            print(imageURL)
-                            try! imageData.write(to: imageURL)
-                            
-                            let photo:Photo = Photo(context: context)
-                            
-                            print("\(imageURL)")
-                            photo.path =  "\(imageURL)"
-                            selectedPin.addToPhotos(photo)
-                            //imageUrlStrings.append(photo)
-                            do {
-                                try context.save()
-                            } catch {
-                                print("There was a problem while saving to the database")
-                            }
-
-                        }
+                    guard let title = photo[FlickrResponseKeys.Title] as? String else {
+                        displayError("Cannot find key '\(FlickrResponseKeys.Title)' in \(photosArray)")
+                        return
                     }
+                    
+                    let docDir = try! FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
+                    let imageURL = docDir.appendingPathComponent(title + ".jpg")
+                    
+                    let photo:Photo = Photo(context: context)
+                    
+                    //print("\(imageURL)")
+                    photo.path =  "\(imageURL)"
+                    photo.downloadPath = urlString
+                    selectedPin.addToPhotos(photo)
+                    //imageUrlStrings.append(photo)
+                    do {
+                        try context.save()
+                    } catch {
+                        print("There was a problem while saving to the database")
+                    }
+
+                    
+                    
                     completionHandler(true, nil)
                 }
                 

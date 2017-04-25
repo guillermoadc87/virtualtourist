@@ -30,9 +30,9 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
             print("\(fetchError), \(fetchError.localizedDescription)")
         }
         
-        let fetch = NSFetchRequest<NSFetchRequestResult>(entityName: "Photo")
-        let request = NSBatchDeleteRequest(fetchRequest: fetch)
-        try! context.execute(request)
+        //let fetch = NSFetchRequest<NSFetchRequestResult>(entityName: "Photo")
+        //let request = NSBatchDeleteRequest(fetchRequest: fetch)
+        //try! context.execute(request)
         self.updatePhotos()
         // Do any additional setup after loading the view.
     }
@@ -84,8 +84,34 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
         }
         
         let photo = fetchedResultsController.object(at: indexPath)
-        print(photo.path!)
-        photoCell.imageView.image = UIImage(contentsOfFile: photo.path!)
+        print(FileManager.default.fileExists(atPath: photo.path!))
+        if !FileManager.default.fileExists(atPath: photo.path!) {
+            print("downloading")
+            FlickrClient.sharedInstance.getDataFromUrl(photo.downloadPath!) { (imageData, error) in
+                guard let imageData = imageData else {
+                    self.displayAlert(title: "Image data error", message: error)
+                    return
+                }
+                
+                performUIUpdatesOnMain {
+                    do {
+                        try imageData.write(to: URL(fileURLWithPath: photo.path!), options:  .atomic)
+                        print("Saved To Root")
+                    } catch let error {
+                        print(error)
+                    }
+                    
+                    let image = UIImage(contentsOfFile: photo.path!)
+                    print(image)
+                    photoCell.imageView.image = image
+                }
+            }
+        } else {
+            print("downloaded")
+            let image = UIImage(contentsOfFile: photo.path!)
+            print(image)
+            photoCell.imageView.image = image
+        }
         
         return photoCell
     }

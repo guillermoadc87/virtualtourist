@@ -21,6 +21,7 @@
 		62D6003F1EAB961400E1F2CB /* FlickrClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62D6003E1EAB961400E1F2CB /* FlickrClient.swift */; };
 		62D600411EABAC7400E1F2CB /* PhotoAlbumViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62D600401EABAC7400E1F2CB /* PhotoAlbumViewController.swift */; };
 		62D600431EABCFF600E1F2CB /* PhotoCollectionViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62D600421EABCFF600E1F2CB /* PhotoCollectionViewCell.swift */; };
+		62D600451EAF786100E1F2CB /* Helper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62D600441EAF786100E1F2CB /* Helper.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -40,6 +41,7 @@
 		62D6003E1EAB961400E1F2CB /* FlickrClient.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FlickrClient.swift; sourceTree = "<group>"; };
 		62D600401EABAC7400E1F2CB /* PhotoAlbumViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PhotoAlbumViewController.swift; sourceTree = "<group>"; };
 		62D600421EABCFF600E1F2CB /* PhotoCollectionViewCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PhotoCollectionViewCell.swift; sourceTree = "<group>"; };
+		62D600441EAF786100E1F2CB /* Helper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Helper.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -76,6 +78,7 @@
 		62D6001B1EA9AEFD00E1F2CB /* VirtualTourist */ = {
 			isa = PBXGroup;
 			children = (
+				62D600441EAF786100E1F2CB /* Helper.swift */,
 				62D6003E1EAB961400E1F2CB /* FlickrClient.swift */,
 				62D6001C1EA9AEFD00E1F2CB /* AppDelegate.swift */,
 				62D600391EA9B0A400E1F2CB /* GCDBlackBox.swift */,
@@ -174,6 +177,7 @@
 				62D600361EA9AFBF00E1F2CB /* Photo+CoreDataProperties.swift in Sources */,
 				62D600431EABCFF600E1F2CB /* PhotoCollectionViewCell.swift in Sources */,
 				62D6003F1EAB961400E1F2CB /* FlickrClient.swift in Sources */,
+				62D600451EAF786100E1F2CB /* Helper.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
