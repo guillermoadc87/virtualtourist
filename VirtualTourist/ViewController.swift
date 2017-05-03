@@ -21,6 +21,9 @@ class ViewController: UIViewController, MKMapViewDelegate, UIGestureRecognizerDe
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        self.editLabel.frame.origin.y = self.editLabel.frame.origin.y + self.editLabel.frame.height
+        print(self.editLabel.frame.origin.y + self.editLabel.frame.height, self.editLabel.frame.origin.y)
         // Do any additional setup after loading the view, typically from a nib.
         let gestureRecognizer = UILongPressGestureRecognizer(target: self, action:#selector(handleTap(gestureReconizer:)))
         gestureRecognizer.delegate = self
@@ -125,9 +128,10 @@ class ViewController: UIViewController, MKMapViewDelegate, UIGestureRecognizerDe
                     } else {
                         //Perform segue to the photo album
                         print("Perform segue to the photo album.")
-                        performUIUpdatesOnMain {
-                            self.performSegue(withIdentifier: "PhotoAlbum", sender: pin)
-                        }
+                        self.performSegue(withIdentifier: "PhotoAlbum", sender: pin)
+                        //performUIUpdatesOnMain {
+                            
+                        //}
                     }
                 }
             }
@@ -144,9 +148,14 @@ class ViewController: UIViewController, MKMapViewDelegate, UIGestureRecognizerDe
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if segue.identifier == "PhotoAlbum" {
+            
+            let childContext = NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType)
+            childContext.parent = context
             let photoAlbumController = segue.destination as! PhotoAlbumViewController
-            let pinSelected = sender as! Pin
+            let pinSelected = childContext.object(with: (sender as! Pin).objectID) as? Pin
             photoAlbumController.pinSelected = pinSelected
+            photoAlbumController.context = childContext
+            
         }
     }
 }

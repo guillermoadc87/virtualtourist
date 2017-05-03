@@ -14,8 +14,8 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
 
     @IBOutlet weak var mapView: MKMapView!
     @IBOutlet weak var photoCollection: UICollectionView!
-    
-    var context = AppDelegate.viewContext
+    @IBOutlet weak var flowLayout: UICollectionViewFlowLayout!
+    var context: NSManagedObjectContext!
     var pinSelected:Pin!
     
     override func viewDidLoad() {
@@ -33,7 +33,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
         //let fetch = NSFetchRequest<NSFetchRequestResult>(entityName: "Photo")
         //let request = NSBatchDeleteRequest(fetchRequest: fetch)
         //try! context.execute(request)
-        self.updatePhotos()
+        self.update()
         // Do any additional setup after loading the view.
     }
 
@@ -59,17 +59,49 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
         return fetchedResultsController
     }()
     
-    func updatePhotos() {
+    func update() {
         print("Update Photos")
         let photos = fetchedResultsController.fetchedObjects
         if photos!.isEmpty == true {
-            FlickrClient.sharedInstance.getImagesFromFlickr(pinSelected) { success, error in
-                print("Aqui regrese",success!)
+            FlickrClient.sharedInstance.getImagesFromFlickr(pinSelected, context: context) { success, error in
                 if error != nil {
                     print("Error downloading image")
                 }
             }
         }
+        
+        self.mapView.isZoomEnabled = false;
+        self.mapView.isScrollEnabled = false;
+        self.mapView.isUserInteractionEnabled = false;
+        
+        if let pin = pinSelected {
+            //Add Pin to Map
+            var annotations = [MKPointAnnotation]()
+            let latitude = CLLocationDegrees(pin.latitude)
+            let longitude = CLLocationDegrees(pin.longitude)
+            let coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+            let annotation = MKPointAnnotation()
+            annotation.coordinate = coordinate
+            annotations.append(annotation)
+            mapView.addAnnotation(annotation)
+            
+            // Zoom the map to the Pin location
+            let latDelta: CLLocationDegrees = 0.05
+            let lonDelta: CLLocationDegrees = 0.05
+            let span:MKCoordinateSpan = MKCoordinateSpanMake(latDelta, lonDelta)
+            let location: CLLocationCoordinate2D = CLLocationCoordinate2DMake(pinSelected.latitude, pinSelected.longitude)
+            let region: MKCoordinateRegion = MKCoordinateRegionMake(location, span)
+            mapView.setRegion(region, animated: true)
+        }
+        
+        let space: CGFloat = 3.0
+        let dimension = (self.view.frame.size.width - (2 * space)) / 3.0
+        let lineSpacing = (self.view.frame.size.height - (2 * space)) / 35.0
+        // Change the CollectionViewCell dimensions and separecions between cells
+        flowLayout.minimumInteritemSpacing = space
+        flowLayout.minimumLineSpacing = lineSpacing
+        flowLayout.itemSize = CGSize(width: dimension, height: dimension)
+        
     }
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
@@ -84,33 +116,27 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
         }
         
         let photo = fetchedResultsController.object(at: indexPath)
-        print(FileManager.default.fileExists(atPath: photo.path!))
-        if !FileManager.default.fileExists(atPath: photo.path!) {
-            print("downloading")
-            FlickrClient.sharedInstance.getDataFromUrl(photo.downloadPath!) { (imageData, error) in
+        print("Aqui estoy")
+        if photo.path != nil {
+            photoCell.imageView.image = UIImage(data: photo.path as! Data)
+        } else {
+            FlickrClient.sharedInstance.getDataFromUrl(photo.downloadPath!) { imageData, error in
                 guard let imageData = imageData else {
                     self.displayAlert(title: "Image data error", message: error)
                     return
                 }
                 
+                photo.path = imageData as! NSData
                 performUIUpdatesOnMain {
+                    photoCell.imageView.image = UIImage(data: photo.path as! Data)
                     do {
-                        try imageData.write(to: URL(fileURLWithPath: photo.path!), options:  .atomic)
-                        print("Saved To Root")
-                    } catch let error {
-                        print(error)
+                        try self.context.save()
+                    } catch {
+                        print("There was a problem while saving to the database")
                     }
-                    
-                    let image = UIImage(contentsOfFile: photo.path!)
-                    print(image)
-                    photoCell.imageView.image = image
                 }
+                
             }
-        } else {
-            print("downloaded")
-            let image = UIImage(contentsOfFile: photo.path!)
-            print(image)
-            photoCell.imageView.image = image
         }
         
         return photoCell

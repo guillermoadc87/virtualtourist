@@ -76,7 +76,7 @@ class FlickrClient: NSObject {
     
     // MARK: Flickr API
     
-    func getImagesFromFlickr(_ selectedPin: Pin, _ completionHandler: @escaping (_ success: Bool?, _ error: NSError?) -> Void) {
+    func getImagesFromFlickr(_ selectedPin: Pin, context: NSManagedObjectContext, _ completionHandler: @escaping (_ success: Bool?, _ error: NSError?) -> Void) {
         
         let methodParameters: [String:String] = [
             FlickrParameterKeys.Method: FlickrParameterValues.SearchMethod,
@@ -122,7 +122,6 @@ class FlickrClient: NSObject {
             }
             performUIUpdatesOnMain {
                 
-                let context = AppDelegate.viewContext
                 //let photo:Photo = NSEntityDescription.insertNewObject(forEntityName: "Photo", into: context ) as! Photo
 
                 
@@ -132,18 +131,9 @@ class FlickrClient: NSObject {
                         return
                     }
                     
-                    guard let title = photo[FlickrResponseKeys.Title] as? String else {
-                        displayError("Cannot find key '\(FlickrResponseKeys.Title)' in \(photosArray)")
-                        return
-                    }
-                    
-                    let docDir = try! FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
-                    let imageURL = docDir.appendingPathComponent(title + ".jpg")
-                    
                     let photo:Photo = Photo(context: context)
                     
                     //print("\(imageURL)")
-                    photo.path =  "\(imageURL)"
                     photo.downloadPath = urlString
                     selectedPin.addToPhotos(photo)
                     //imageUrlStrings.append(photo)
