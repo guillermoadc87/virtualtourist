@@ -146,6 +146,9 @@
                                     <constraint firstAttribute="width" secondItem="L1m-zQ-YXB" secondAttribute="height" multiplier="15:2" id="ob2-gX-Pdg"/>
                                 </constraints>
                                 <state key="normal" title="New Collection"/>
+                                <connections>
+                                    <action selector="bottonButtomSelected:" destination="gZ2-kL-SIg" eventType="touchUpInside" id="aC8-XC-PYV"/>
+                                </connections>
                             </button>
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
@@ -164,6 +167,7 @@
                         </constraints>
                     </view>
                     <connections>
+                        <outlet property="bottomButton" destination="L1m-zQ-YXB" id="YBX-LD-jHk"/>
                         <outlet property="flowLayout" destination="Okj-lh-onv" id="q8p-Lh-JKp"/>
                         <outlet property="mapView" destination="vLE-vU-xug" id="szk-Bx-hdO"/>
                         <outlet property="photoCollection" destination="nMi-sN-1Xc" id="ciK-8t-E8Y"/>

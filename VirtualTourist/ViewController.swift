@@ -149,12 +149,8 @@ class ViewController: UIViewController, MKMapViewDelegate, UIGestureRecognizerDe
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if segue.identifier == "PhotoAlbum" {
             
-            let childContext = NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType)
-            childContext.parent = context
             let photoAlbumController = segue.destination as! PhotoAlbumViewController
-            let pinSelected = childContext.object(with: (sender as! Pin).objectID) as? Pin
-            photoAlbumController.pinSelected = pinSelected
-            photoAlbumController.context = childContext
+            photoAlbumController.pinSelected = sender as! Pin
             
         }
     }

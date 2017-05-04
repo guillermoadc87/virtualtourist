@@ -15,8 +15,28 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
     @IBOutlet weak var mapView: MKMapView!
     @IBOutlet weak var photoCollection: UICollectionView!
     @IBOutlet weak var flowLayout: UICollectionViewFlowLayout!
-    var context: NSManagedObjectContext!
+    @IBOutlet weak var bottomButton: UIButton!
+    
+    var context = AppDelegate.viewContext
     var pinSelected:Pin!
+    var selectedPhotosIndexPath = [IndexPath]()
+    
+    fileprivate lazy var fetchedResultsController: NSFetchedResultsController<Photo> = {
+        // Create Fetch Request
+        let fetchRequest: NSFetchRequest<Photo> = Photo.fetchRequest()
+        
+        // Configure Fetch Request
+        fetchRequest.sortDescriptors = [NSSortDescriptor(key: "downloadPath", ascending: false)]
+        fetchRequest.predicate = NSPredicate(format: "pin = %@", self.pinSelected)
+        
+        // Create Fetched Results Controller
+        let fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: self.context, sectionNameKeyPath: nil, cacheName: nil)
+        
+        // Configure Fetched Results Controller
+        fetchedResultsController.delegate = self
+        
+        return fetchedResultsController
+    }()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -42,22 +62,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
         // Dispose of any resources that can be recreated.
     }
     
-    fileprivate lazy var fetchedResultsController: NSFetchedResultsController<Photo> = {
-        // Create Fetch Request
-        let fetchRequest: NSFetchRequest<Photo> = Photo.fetchRequest()
-        
-        // Configure Fetch Request
-        fetchRequest.sortDescriptors = [NSSortDescriptor(key: "path", ascending: false)]
-        fetchRequest.predicate = NSPredicate(format: "pin = %@", self.pinSelected)
-        
-        // Create Fetched Results Controller
-        let fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: self.context, sectionNameKeyPath: nil, cacheName: nil)
-        
-        // Configure Fetched Results Controller
-        fetchedResultsController.delegate = self
-        
-        return fetchedResultsController
-    }()
+    
     
     func update() {
         print("Update Photos")
@@ -96,16 +101,17 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
         
         let space: CGFloat = 3.0
         let dimension = (self.view.frame.size.width - (2 * space)) / 3.0
-        let lineSpacing = (self.view.frame.size.height - (2 * space)) / 35.0
+        //let lineSpacing = (self.view.frame.size.height - (2 * space)) / 35.0
         // Change the CollectionViewCell dimensions and separecions between cells
         flowLayout.minimumInteritemSpacing = space
-        flowLayout.minimumLineSpacing = lineSpacing
+        flowLayout.minimumLineSpacing = space
         flowLayout.itemSize = CGSize(width: dimension, height: dimension)
         
     }
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         guard let quotes = fetchedResultsController.fetchedObjects else { return 0 }
+        print(quotes.count)
         return quotes.count
     }
     
@@ -116,7 +122,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
         }
         
         let photo = fetchedResultsController.object(at: indexPath)
-        print("Aqui estoy")
+        
         if photo.path != nil {
             photoCell.imageView.image = UIImage(data: photo.path as! Data)
         } else {
@@ -140,6 +146,54 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
         }
         
         return photoCell
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        let selectedCell = collectionView.cellForItem(at: indexPath) as! PhotoAlbumCell
+        
+        let index = selectedPhotosIndexPath.index(of: indexPath)
+        
+        if let index = index {
+            selectedPhotosIndexPath.remove(at: index)
+            selectedCell.imageView.alpha = 1.0
+        } else {
+            selectedPhotosIndexPath.append(indexPath)
+            selectedCell.imageView.alpha = 0.25
+        }
+        print(selectedPhotosIndexPath)
+        if selectedPhotosIndexPath.count > 0 {
+            bottomButton.setTitle("Remove Selected Pictures", for: .normal)
+        } else {
+            bottomButton.setTitle("New Collection", for: .normal)
+        }
+        
+    }
+    
+    
+    func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
+        switch (type) {
+        case .delete:
+            print("Item Deleted")
+            if let indexPath = indexPath {
+                photoCollection.deleteItems(at: [indexPath])
+            }
+            break
+        default:
+            break
+        }
+    }
+    
+    @IBAction func bottonButtomSelected(_ sender: UIButton) {
+        if selectedPhotosIndexPath.count > 0 {
+            for indexPath in selectedPhotosIndexPath {
+                print("Delete Item")
+                let Photo = fetchedResultsController.object(at: indexPath)
+                fetchedResultsController.managedObjectContext.delete(Photo)
+            }
+            selectedPhotosIndexPath.removeAll()
+        } else {
+            print("Aqui estoy")
+        }
     }
     
     /*
