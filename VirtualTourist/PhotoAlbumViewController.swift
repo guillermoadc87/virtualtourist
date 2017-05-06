@@ -20,39 +20,12 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
     var context = AppDelegate.viewContext
     var pinSelected:Pin!
     var selectedPhotosIndexPath = [IndexPath]()
+    var currentPage = 0
     
-    fileprivate lazy var fetchedResultsController: NSFetchedResultsController<Photo> = {
-        // Create Fetch Request
-        let fetchRequest: NSFetchRequest<Photo> = Photo.fetchRequest()
-        
-        // Configure Fetch Request
-        fetchRequest.sortDescriptors = [NSSortDescriptor(key: "downloadPath", ascending: false)]
-        fetchRequest.predicate = NSPredicate(format: "pin = %@", self.pinSelected)
-        
-        // Create Fetched Results Controller
-        let fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: self.context, sectionNameKeyPath: nil, cacheName: nil)
-        
-        // Configure Fetched Results Controller
-        fetchedResultsController.delegate = self
-        
-        return fetchedResultsController
-    }()
+    var fetchedResultsController: NSFetchedResultsController<Photo> = NSFetchedResultsController()
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        do {
-            try self.fetchedResultsController.performFetch()
-            
-        } catch {
-            let fetchError = error as NSError
-            print("Unable to Perform Fetch Request")
-            print("\(fetchError), \(fetchError.localizedDescription)")
-        }
-        
-        //let fetch = NSFetchRequest<NSFetchRequestResult>(entityName: "Photo")
-        //let request = NSBatchDeleteRequest(fetchRequest: fetch)
-        //try! context.execute(request)
         self.update()
         // Do any additional setup after loading the view.
     }
@@ -62,18 +35,37 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
         // Dispose of any resources that can be recreated.
     }
     
+    func photoListFetchedResultsController() -> NSFetchedResultsController<Photo> {
+        let fetchedResultController = NSFetchedResultsController(fetchRequest: photoFetchRequest(),
+                                                                 managedObjectContext: context,
+                                                                 sectionNameKeyPath: nil,
+                                                                 cacheName: nil)
+        fetchedResultController.delegate = self
+        
+        do {
+            try fetchedResultController.performFetch()
+        } catch let error as NSError {
+            fatalError("Error: \(error.localizedDescription)")
+        }
+        
+        return fetchedResultController
+    }
+    
+    func photoFetchRequest() -> NSFetchRequest<Photo> {
+        // Create Fetch Request
+        let fetchRequest: NSFetchRequest<Photo> = Photo.fetchRequest()
+        
+        // Configure Fetch Request
+        fetchRequest.sortDescriptors = []
+        fetchRequest.predicate = NSPredicate(format: "pin = %@", self.pinSelected)
+        
+        return fetchRequest
+    }
     
     
     func update() {
-        print("Update Photos")
-        let photos = fetchedResultsController.fetchedObjects
-        if photos!.isEmpty == true {
-            FlickrClient.sharedInstance.getImagesFromFlickr(pinSelected, context: context) { success, error in
-                if error != nil {
-                    print("Error downloading image")
-                }
-            }
-        }
+        fetchedResultsController = photoListFetchedResultsController()
+        updatePhotos()
         
         self.mapView.isZoomEnabled = false;
         self.mapView.isScrollEnabled = false;
@@ -109,6 +101,23 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
         
     }
     
+    func updatePhotos() {
+        print("Update Photos", currentPage)
+        let photos = fetchedResultsController.fetchedObjects
+        print(photos!.isEmpty)
+        if photos!.isEmpty == true {
+            FlickrClient.sharedInstance.getImagesFromFlickr(pinSelected, currentPage, context: context) { success, error in
+                if error != nil {
+                    print("Error downloading image")
+                }
+                performUIUpdatesOnMain {
+                  self.photoCollection.reloadData()
+                }
+                
+            }
+        }
+    }
+    
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         guard let quotes = fetchedResultsController.fetchedObjects else { return 0 }
         print(quotes.count)
@@ -131,7 +140,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
                     self.displayAlert(title: "Image data error", message: error)
                     return
                 }
-                
+        
                 photo.path = imageData as! NSData
                 performUIUpdatesOnMain {
                     photoCell.imageView.image = UIImage(data: photo.path as! Data)
@@ -189,10 +198,29 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
                 print("Delete Item")
                 let Photo = fetchedResultsController.object(at: indexPath)
                 fetchedResultsController.managedObjectContext.delete(Photo)
+                do {
+                    try self.context.save()
+                } catch {
+                    print("There was a problem while saving to the database")
+                }
+                
             }
-            selectedPhotosIndexPath.removeAll()
+            selectedPhotosIndexPath = [IndexPath]()
+            bottomButton.setTitle("New Collection", for: .normal)
         } else {
-            print("Aqui estoy")
+            currentPage += 1
+            let photos = fetchedResultsController.fetchedObjects
+            
+            for photo in photos! {
+                context.delete(photo)
+                do {
+                    try self.context.save()
+                } catch {
+                    print("There was a problem while saving to the database")
+                }
+            }
+            
+            updatePhotos()
         }
     }
     

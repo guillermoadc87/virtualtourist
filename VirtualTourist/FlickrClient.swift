@@ -76,7 +76,7 @@ class FlickrClient: NSObject {
     
     // MARK: Flickr API
     
-    func getImagesFromFlickr(_ selectedPin: Pin, context: NSManagedObjectContext, _ completionHandler: @escaping (_ success: Bool?, _ error: NSError?) -> Void) {
+    func getImagesFromFlickr(_ selectedPin: Pin, _ page: Int, context: NSManagedObjectContext, _ completionHandler: @escaping (_ success: Bool?, _ error: NSError?) -> Void) {
         
         let methodParameters: [String:String] = [
             FlickrParameterKeys.Method: FlickrParameterValues.SearchMethod,
@@ -85,7 +85,7 @@ class FlickrClient: NSObject {
             FlickrParameterKeys.Latitude: "\(selectedPin.latitude)",
             FlickrParameterKeys.Longitude: "\(selectedPin.longitude)",
             FlickrParameterKeys.PerPage: "21",
-            FlickrParameterKeys.Page: "10",
+            FlickrParameterKeys.Page: "\(page)",
             FlickrParameterKeys.SafeSearch: FlickrParameterValues.UseSafeSearch,
             FlickrParameterKeys.Extras: FlickrParameterValues.MediumURL,
             FlickrParameterKeys.Format: FlickrParameterValues.ResponseFormat,
