@@ -42,13 +42,17 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
                                                                  cacheName: nil)
         fetchedResultController.delegate = self
         
+        performFetchFor(fetchedResultController)
+        
+        return fetchedResultController
+    }
+    
+    func performFetchFor(_ fetchedResultController: NSFetchedResultsController<Photo>) {
         do {
             try fetchedResultController.performFetch()
         } catch let error as NSError {
             fatalError("Error: \(error.localizedDescription)")
         }
-        
-        return fetchedResultController
     }
     
     func photoFetchRequest() -> NSFetchRequest<Photo> {
@@ -116,6 +120,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
                 
             }
         }
+        currentPage += 1
     }
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
@@ -135,20 +140,23 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
         if photo.path != nil {
             photoCell.imageView.image = UIImage(data: photo.path as! Data)
         } else {
+            photoCell.showActivityIndicator()
+            
             FlickrClient.sharedInstance.getDataFromUrl(photo.downloadPath!) { imageData, error in
                 guard let imageData = imageData else {
                     self.displayAlert(title: "Image data error", message: error)
                     return
                 }
         
-                photo.path = imageData as! NSData
                 performUIUpdatesOnMain {
+                    photo.path = imageData as! NSData
                     photoCell.imageView.image = UIImage(data: photo.path as! Data)
                     do {
                         try self.context.save()
                     } catch {
                         print("There was a problem while saving to the database")
                     }
+                    photoCell.hideActivityIndicator()
                 }
                 
             }
@@ -185,7 +193,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
             print("Item Deleted")
             if let indexPath = indexPath {
                 photoCollection.deleteItems(at: [indexPath])
-            }
+           }
             break
         default:
             break
@@ -194,32 +202,29 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
     
     @IBAction func bottonButtomSelected(_ sender: UIButton) {
         if selectedPhotosIndexPath.count > 0 {
+            var photosToDelete = [Photo]()
             for indexPath in selectedPhotosIndexPath {
-                print("Delete Item")
-                let Photo = fetchedResultsController.object(at: indexPath)
-                fetchedResultsController.managedObjectContext.delete(Photo)
+                print("Delete Item", indexPath.item)
+                let photo = fetchedResultsController.object(at: indexPath)
+                photosToDelete.append(photo)
+            }
+            for photo in photosToDelete {
+                fetchedResultsController.managedObjectContext.delete(photo)
                 do {
                     try self.context.save()
                 } catch {
                     print("There was a problem while saving to the database")
                 }
-                
             }
             selectedPhotosIndexPath = [IndexPath]()
             bottomButton.setTitle("New Collection", for: .normal)
         } else {
-            currentPage += 1
             let photos = fetchedResultsController.fetchedObjects
             
             for photo in photos! {
                 context.delete(photo)
-                do {
-                    try self.context.save()
-                } catch {
-                    print("There was a problem while saving to the database")
-                }
             }
-            
+            performFetchFor(self.fetchedResultsController)
             updatePhotos()
         }
     }

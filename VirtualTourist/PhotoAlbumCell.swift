@@ -12,4 +12,20 @@ class PhotoAlbumCell: UICollectionViewCell {
     
     @IBOutlet weak var imageView: UIImageView!
     
+    var activityIndicator = UIActivityIndicatorView()
+    
+    func showActivityIndicator(){
+        activityIndicator.center = contentView.center
+        activityIndicator.hidesWhenStopped = true
+        activityIndicator.activityIndicatorViewStyle = .gray
+        addSubview(activityIndicator)
+        activityIndicator.startAnimating()
+        UIApplication.shared.beginIgnoringInteractionEvents()
+    }
+    
+    func hideActivityIndicator(){
+        activityIndicator.stopAnimating()
+        UIApplication.shared.endIgnoringInteractionEvents()
+    }
+    
 }
